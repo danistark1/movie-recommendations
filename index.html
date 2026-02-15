@@ -33,42 +33,40 @@
         }
 
         header { text-align: center; border-bottom: 2px double var(--ink); margin-bottom: 30px; padding-bottom: 10px; }
-        h1 { font-family: 'Cinzel Decorative', cursive; font-size: 2.8rem; margin: 0; color: var(--maroon); }
+        h1 { font-family: 'Cinzel Decorative', cursive; font-size: 2.5rem; margin: 0; color: var(--maroon); }
 
         .tabs { display: flex; justify-content: center; gap: 30px; margin-bottom: 25px; }
         .tab-btn {
             background: none; border: none; font-family: 'Cinzel Decorative', cursive;
-            font-size: 1.3rem; cursor: pointer; padding: 10px; color: var(--ink);
+            font-size: 1.2rem; cursor: pointer; padding: 10px; color: var(--ink);
             border-bottom: 3px solid transparent; transition: 0.3s;
         }
         .tab-btn.active { border-bottom: 3px solid var(--maroon); color: var(--maroon); }
 
-        /* Genre Selection Box */
         .selection-box {
             background: rgba(44, 30, 22, 0.08); border: 1px dashed var(--ink);
             padding: 25px; border-radius: 12px; text-align: center; margin-bottom: 30px;
         }
 
-        label { font-family: 'Cinzel Decorative', cursive; display: block; margin-bottom: 10px; font-size: 1.1rem; }
+        label { font-family: 'Cinzel Decorative', cursive; display: block; margin-bottom: 10px; }
 
         select {
-            padding: 10px 20px; font-family: 'Spectral', serif; font-size: 1.1rem;
+            padding: 10px; font-family: 'Spectral', serif; font-size: 1.1rem;
             background: var(--parchment); border: 2px solid var(--ink); border-radius: 4px;
-            cursor: pointer; width: 250px; outline: none;
+            width: 250px; outline: none;
         }
 
         .cast-btn {
             background: var(--maroon); color: white; border: none;
-            padding: 10px 25px; font-family: 'Cinzel Decorative', cursive;
+            padding: 12px 30px; font-family: 'Cinzel Decorative', cursive;
             font-size: 1rem; cursor: pointer; border-radius: 4px;
-            margin-top: 15px; transition: 0.2s; display: block; margin: 20px auto 0;
+            margin-top: 20px; transition: 0.2s; display: block; margin-left: auto; margin-right: auto;
         }
-        .cast-btn:hover { background: #5a0001; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .cast-btn:hover { background: #5a0001; transform: scale(1.05); }
 
-        /* Results Area */
         .result-card {
             display: grid; grid-template-columns: 280px 1fr; gap: 30px;
-            margin-top: 20px; animation: fadeIn 0.6s ease-in;
+            margin-top: 20px; animation: fadeIn 0.8s ease-in;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -80,6 +78,7 @@
 
         .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); }
         .rating { color: #b08d00; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
+        .cast-list { font-style: italic; color: #4a3728; margin: 10px 0; }
         
         .pensieve-btn {
             background: var(--raven-blue); color: white; border: none;
@@ -90,7 +89,6 @@
         .star-btn { font-size: 2rem; cursor: pointer; background: none; border: none; color: #ccc; vertical-align: middle; }
         .star-btn.active { color: var(--gold); }
 
-        /* Grimoire Styles */
         .grimoire { margin-top: 50px; border-top: 2px solid var(--ink); padding-top: 20px; }
         .grimoire h3 { font-family: 'Cinzel Decorative', cursive; }
         .grimoire ul { list-style-type: none; padding: 0; }
@@ -106,7 +104,7 @@
             padding: 2px 8px; border-radius: 4px; font-size: 0.8rem;
         }
 
-        @media (max-width: 700px) { .result-card { grid-template-columns: 1fr; } .poster-container { max-width: 200px; margin: 0 auto; } }
+        @media (max-width: 700px) { .result-card { grid-template-columns: 1fr; } .poster-container { max-width: 220px; margin: 0 auto; } }
     </style>
 </head>
 <body>
@@ -114,7 +112,7 @@
 <div class="overlay">
     <div class="container">
         <header>
-            <h1>The Marauder's Media Map</h1>
+            <h1>The Three Broomsticks Media Map</h1>
             <p>I solemnly swear that I am up to no good...</p>
         </header>
 
@@ -124,9 +122,8 @@
         </div>
 
         <div class="selection-box">
-            <label for="genre-select">Choose Your Department:</label>
-            <select id="genre-select">
-                </select>
+            <label for="genre-select">Select a Genre to Reveal:</label>
+            <select id="genre-select"></select>
             <button class="cast-btn" onclick="getRecommendation()">Cast Revelio</button>
         </div>
 
@@ -140,6 +137,7 @@
 </div>
 
 <script>
+    // --- INSERT YOUR KEY HERE ---
     const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2';
     const BASE_URL = 'https://api.themoviedb.org/3';
     const STORAGE_KEY = 'marauders_favorites'; 
@@ -174,33 +172,23 @@
     async function getRecommendation() {
         const genreId = document.getElementById('genre-select').value;
         const display = document.getElementById('display-area');
-        display.innerHTML = "<p style='text-align:center'>Consulting the prophecy...</p>";
+        display.innerHTML = "<p style='text-align:center'>Tapping the parchment...</p>";
 
         try {
-            let attempts = 0;
-            let data = null;
+            const randomPage = Math.floor(Math.random() * 10) + 1;
+            const url = `${BASE_URL}/discover/${currentMode}?api_key=${API_KEY}&with_genres=${genreId}&page=${randomPage}&language=en-US&sort_by=popularity.desc`;
             
-            while (attempts < 3) {
-                const randomPage = Math.floor(Math.random() * 5) + 1;
-                const url = `${BASE_URL}/discover/${currentMode}?api_key=${API_KEY}&with_genres=${genreId}&page=${randomPage}&language=en-US&sort_by=popularity.desc`;
-                
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`API Error: ${response.status}`);
-                data = await response.json();
-                if (data.results?.length > 0) break;
-                attempts++;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            if (data.results?.length > 0) {
+                const item = data.results[Math.floor(Math.random() * data.results.length)];
+                fetchFullDetails(item.id);
+            } else {
+                display.innerHTML = "No results found. Try a different genre!";
             }
-
-            if (!data || data.results.length === 0) {
-                display.innerHTML = "<p style='text-align:center'>The library has no records for this genre today.</p>";
-                return;
-            }
-
-            const item = data.results[Math.floor(Math.random() * data.results.length)];
-            fetchFullDetails(item.id);
-
         } catch (err) {
-            display.innerHTML = `<p style='text-align:center; color:var(--maroon);'>The owls got lost. (Error: ${err.message})</p>`;
+            display.innerHTML = "<p style='color:var(--maroon); text-align:center;'>The owls got lost. Check your API key!</p>";
         }
     }
 
@@ -217,20 +205,22 @@
         const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const isFav = favorites[item.id] !== undefined;
         const trailer = item.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        const cast = item.credits?.cast?.slice(0, 3).map(c => c.name).join(', ') || 'Unknown';
+        
+        // Extract top 5 cast members
+        const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown Players';
 
         document.getElementById('display-area').innerHTML = `
             <div class="result-card">
                 <div class="poster-container">
-                    <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="poster" onerror="this.src='https://via.placeholder.com/500x750?text=No+Image'">
+                    <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="poster" onerror="this.src='https://via.placeholder.com/500x750?text=No+Poster'">
                 </div>
                 <div class="details">
                     <h2>${title} 
                         <button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${item.id}', '${title.replace(/'/g, "\\'")}')">★</button>
                     </h2>
-                    <div class="rating">Score: ${item.vote_average.toFixed(1)}/10</div>
-                    <p><strong>The Legend:</strong> ${item.overview}</p>
-                    <p><strong>The Players:</strong> ${cast}</p>
+                    <div class="rating">Wizard Rating: ${item.vote_average.toFixed(1)}/10</div>
+                    <p><strong>The Legend:</strong> ${item.overview || 'The Restricted Section has no record of this story.'}</p>
+                    <p class="cast-list"><strong>The Players:</strong> ${castNames}</p>
                     ${trailer ? `<button class="pensieve-btn" onclick="window.open('https://youtube.com/watch?v=${trailer.key}', '_blank')">View in Pensieve</button>` : ''}
                 </div>
             </div>
