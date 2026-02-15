@@ -77,6 +77,7 @@
         }
 
         .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); }
+        .year-tag { font-family: 'Spectral', serif; font-size: 1.2rem; opacity: 0.7; font-weight: normal; }
         .rating { color: #b08d00; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
         .cast-list { font-style: italic; color: #4a3728; margin: 10px 0; }
         
@@ -138,7 +139,7 @@
 
 <script>
     // --- INSERT YOUR KEY HERE ---
-    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2';
+    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2'; 
     const BASE_URL = 'https://api.themoviedb.org/3';
     const STORAGE_KEY = 'marauders_favorites'; 
     
@@ -172,7 +173,7 @@
     async function getRecommendation() {
         const genreId = document.getElementById('genre-select').value;
         const display = document.getElementById('display-area');
-        display.innerHTML = "<p style='text-align:center'>Tapping the parchment...</p>";
+        display.innerHTML = "<p style='text-align:center'>Consulting the crystal ball...</p>";
 
         try {
             const randomPage = Math.floor(Math.random() * 10) + 1;
@@ -202,11 +203,12 @@
 
     function renderCard(item) {
         const title = item.title || item.name;
+        const releaseDate = item.release_date || item.first_air_date || '';
+        const releaseYear = releaseDate ? `(${releaseDate.substring(0, 4)})` : '';
+        
         const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const isFav = favorites[item.id] !== undefined;
         const trailer = item.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        
-        // Extract top 5 cast members
         const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown Players';
 
         document.getElementById('display-area').innerHTML = `
@@ -215,7 +217,7 @@
                     <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="poster" onerror="this.src='https://via.placeholder.com/500x750?text=No+Poster'">
                 </div>
                 <div class="details">
-                    <h2>${title} 
+                    <h2>${title} <span class="year-tag">${releaseYear}</span>
                         <button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${item.id}', '${title.replace(/'/g, "\\'")}')">★</button>
                     </h2>
                     <div class="rating">Wizard Rating: ${item.vote_average.toFixed(1)}/10</div>
