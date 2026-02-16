@@ -12,6 +12,8 @@
             --gold: #d4af37;
             --maroon: #740001;
             --raven-blue: #0e1a40;
+            --ongoing-green: #2d5a27;
+            --ended-red: #8b0000;
         }
 
         body {
@@ -76,9 +78,25 @@
             box-shadow: 10px 10px 20px rgba(0,0,0,0.4); border-radius: 4px;
         }
 
-        .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); }
+        .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); line-height: 1.2; }
         .year-tag { font-family: 'Spectral', serif; font-size: 1.2rem; opacity: 0.7; font-weight: normal; }
         .rating { color: #b08d00; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            margin-left: 10px;
+            vertical-align: middle;
+            text-transform: uppercase;
+        }
+        .status-ongoing { background-color: var(--ongoing-green); }
+        .status-ended { background-color: var(--ended-red); }
+
+        .tv-meta { font-weight: bold; margin: 5px 0; color: var(--raven-blue); }
         .cast-list { font-style: italic; color: #4a3728; margin: 10px 0; }
         
         .pensieve-btn {
@@ -138,8 +156,7 @@
 </div>
 
 <script>
-    // --- INSERT YOUR KEY HERE ---
-    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2'; 
+    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2';
     const BASE_URL = 'https://api.themoviedb.org/3';
     const STORAGE_KEY = 'marauders_favorites'; 
     
@@ -173,7 +190,7 @@
     async function getRecommendation() {
         const genreId = document.getElementById('genre-select').value;
         const display = document.getElementById('display-area');
-        display.innerHTML = "<p style='text-align:center'>Consulting the crystal ball...</p>";
+        display.innerHTML = "<p style='text-align:center'>Reading the tea leaves...</p>";
 
         try {
             const randomPage = Math.floor(Math.random() * 10) + 1;
@@ -211,6 +228,19 @@
         const trailer = item.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
         const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown Players';
 
+        // TV Specific logic
+        let tvInfo = '';
+        if (currentMode === 'tv') {
+            const status = item.status === 'Ended' || item.status === 'Canceled' ? 'Ended' : 'Ongoing';
+            const statusClass = status === 'Ongoing' ? 'status-ongoing' : 'status-ended';
+            tvInfo = `
+                <div class="tv-meta">
+                    Seasons: ${item.number_of_seasons || 'N/A'} 
+                    <span class="status-badge ${statusClass}">${status}</span>
+                </div>
+            `;
+        }
+
         document.getElementById('display-area').innerHTML = `
             <div class="result-card">
                 <div class="poster-container">
@@ -221,7 +251,8 @@
                         <button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${item.id}', '${title.replace(/'/g, "\\'")}')">★</button>
                     </h2>
                     <div class="rating">Wizard Rating: ${item.vote_average.toFixed(1)}/10</div>
-                    <p><strong>The Legend:</strong> ${item.overview || 'The Restricted Section has no record of this story.'}</p>
+                    ${tvInfo}
+                    <p><strong>The Legend:</strong> ${item.overview || 'No story found in the archives.'}</p>
                     <p class="cast-list"><strong>The Players:</strong> ${castNames}</p>
                     ${trailer ? `<button class="pensieve-btn" onclick="window.open('https://youtube.com/watch?v=${trailer.key}', '_blank')">View in Pensieve</button>` : ''}
                 </div>
