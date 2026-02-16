@@ -163,9 +163,33 @@
     let currentMode = 'movie';
     let currentItem = null;
 
+    // Genres updated to include Family and more variety
     const genres = {
-        movie: { 28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 18: "Drama", 14: "Fantasy", 27: "Horror", 9648: "Mystery", 878: "Sci-Fi", 53: "Thriller" },
-        tv: { 10759: "Action & Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 18: "Drama", 10765: "Sci-Fi & Fantasy", 9648: "Mystery" }
+        movie: { 
+            10751: "Family", 
+            16: "Animation",
+            28: "Action", 
+            12: "Adventure", 
+            35: "Comedy", 
+            80: "Crime", 
+            18: "Drama", 
+            14: "Fantasy", 
+            27: "Horror", 
+            9648: "Mystery", 
+            878: "Sci-Fi", 
+            53: "Thriller",
+            10749: "Romance"
+        },
+        tv: { 
+            10751: "Family",
+            16: "Animation",
+            10759: "Action & Adventure", 
+            35: "Comedy", 
+            80: "Crime", 
+            18: "Drama", 
+            10765: "Sci-Fi & Fantasy", 
+            9648: "Mystery"
+        }
     };
 
     function populateGenres() {
@@ -193,7 +217,7 @@
         display.innerHTML = "<p style='text-align:center'>Reading the tea leaves...</p>";
 
         try {
-            const randomPage = Math.floor(Math.random() * 10) + 1;
+            const randomPage = Math.floor(Math.random() * 8) + 1;
             const url = `${BASE_URL}/discover/${currentMode}?api_key=${API_KEY}&with_genres=${genreId}&page=${randomPage}&language=en-US&sort_by=popularity.desc`;
             
             const response = await fetch(url);
@@ -228,7 +252,6 @@
         const trailer = item.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
         const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown Players';
 
-        // TV Specific logic
         let tvInfo = '';
         if (currentMode === 'tv') {
             const status = item.status === 'Ended' || item.status === 'Canceled' ? 'Ended' : 'Ongoing';
@@ -282,7 +305,10 @@
         list.innerHTML = '';
         const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const keys = Object.keys(favorites);
-        if (keys.length === 0) { list.innerHTML = "<li>Grimoire empty...</li>"; return; }
+        if (keys.length === 0) { 
+            list.innerHTML = "<li style='font-style:italic; opacity:0.6;'>Grimoire empty...</li>"; 
+            return; 
+        }
         keys.forEach(id => {
             const li = document.createElement('li');
             li.innerHTML = `<span>⚡ ${favorites[id]}</span> <button class="delete-btn" onclick="deleteFav('${id}')">Deletrius</button>`;
