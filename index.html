@@ -37,10 +37,10 @@
         header { text-align: center; border-bottom: 2px double var(--ink); margin-bottom: 30px; padding-bottom: 10px; }
         h1 { font-family: 'Cinzel Decorative', cursive; font-size: 2.5rem; margin: 0; color: var(--maroon); }
 
-        .tabs { display: flex; justify-content: center; gap: 30px; margin-bottom: 25px; }
+        .tabs { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
         .tab-btn {
             background: none; border: none; font-family: 'Cinzel Decorative', cursive;
-            font-size: 1.2rem; cursor: pointer; padding: 10px; color: var(--ink);
+            font-size: 1.1rem; cursor: pointer; padding: 10px; color: var(--ink);
             border-bottom: 3px solid transparent; transition: 0.3s;
         }
         .tab-btn.active { border-bottom: 3px solid var(--maroon); color: var(--maroon); }
@@ -62,13 +62,15 @@
             background: var(--maroon); color: white; border: none;
             padding: 12px 30px; font-family: 'Cinzel Decorative', cursive;
             font-size: 1rem; cursor: pointer; border-radius: 4px;
-            margin-top: 20px; transition: 0.2s; display: block; margin-left: auto; margin-right: auto;
+            margin-top: 20px; transition: 0.2s; display: block; margin: 20px auto 0;
         }
         .cast-btn:hover { background: #5a0001; transform: scale(1.05); }
 
+        /* Detail Card */
         .result-card {
             display: grid; grid-template-columns: 280px 1fr; gap: 30px;
-            margin-top: 20px; animation: fadeIn 0.8s ease-in;
+            margin-top: 20px; padding-bottom: 30px; border-bottom: 2px solid var(--ink);
+            animation: fadeIn 0.5s ease-in;
         }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -78,25 +80,8 @@
             box-shadow: 10px 10px 20px rgba(0,0,0,0.4); border-radius: 4px;
         }
 
-        .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); line-height: 1.2; }
-        .year-tag { font-family: 'Spectral', serif; font-size: 1.2rem; opacity: 0.7; font-weight: normal; }
-        .rating { color: #b08d00; font-weight: bold; font-size: 1.2rem; margin-bottom: 10px; }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            color: white;
-            margin-left: 10px;
-            vertical-align: middle;
-            text-transform: uppercase;
-        }
-        .status-ongoing { background-color: var(--ongoing-green); }
-        .status-ended { background-color: var(--ended-red); }
-
-        .tv-meta { font-weight: bold; margin: 5px 0; color: var(--raven-blue); }
+        .details h2 { font-family: 'Cinzel Decorative', serif; margin-top: 0; color: var(--ink); }
+        .rating { color: #b08d00; font-weight: bold; font-size: 1.2rem; }
         .cast-list { font-style: italic; color: #4a3728; margin: 10px 0; }
         
         .pensieve-btn {
@@ -108,6 +93,21 @@
         .star-btn { font-size: 2rem; cursor: pointer; background: none; border: none; color: #ccc; vertical-align: middle; }
         .star-btn.active { color: var(--gold); }
 
+        /* Release List Style */
+        .release-list { margin-top: 20px; }
+        .release-item {
+            display: flex; align-items: center; gap: 15px;
+            background: rgba(255,255,255,0.4); margin-bottom: 10px;
+            padding: 10px; border-radius: 4px; cursor: pointer;
+            transition: 0.2s; border: 1px solid transparent;
+        }
+        .release-item:hover { background: rgba(255,255,255,0.8); border: 1px solid var(--gold); }
+        .release-thumb { width: 60px; height: 90px; object-fit: cover; border-radius: 2px; }
+        .release-info { flex-grow: 1; }
+        .release-info h4 { margin: 0; font-family: 'Cinzel Decorative', serif; }
+        .release-meta { font-size: 0.9rem; opacity: 0.8; }
+
+        /* Grimoire */
         .grimoire { margin-top: 50px; border-top: 2px solid var(--ink); padding-top: 20px; }
         .grimoire h3 { font-family: 'Cinzel Decorative', cursive; }
         .grimoire ul { list-style-type: none; padding: 0; }
@@ -138,15 +138,17 @@
         <div class="tabs">
             <button id="movie-tab" class="tab-btn active" onclick="setMode('movie')">Movies</button>
             <button id="tv-tab" class="tab-btn" onclick="setMode('tv')">TV Shows</button>
+            <button id="releases-tab" class="tab-btn" onclick="setMode('releases')">Releases</button>
         </div>
 
         <div class="selection-box">
-            <label for="genre-select">Select a Genre to Reveal:</label>
-            <select id="genre-select"></select>
+            <label id="select-label" for="data-select">Select a Department:</label>
+            <select id="data-select"></select>
             <button class="cast-btn" onclick="getRecommendation()">Cast Revelio</button>
         </div>
 
         <div id="display-area"></div>
+        <div id="list-area" class="release-list"></div>
 
         <div class="grimoire">
             <h3>Saved in Your Grimoire</h3>
@@ -156,89 +158,115 @@
 </div>
 
 <script>
-    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2';
+    const API_KEY = '749a4ba14b3dae3b8fe941aa28de5eb2'; 
     const BASE_URL = 'https://api.themoviedb.org/3';
     const STORAGE_KEY = 'marauders_favorites'; 
     
     let currentMode = 'movie';
     let currentItem = null;
 
-    // Genres updated to include Family and more variety
-    const genres = {
-        movie: { 
-            10751: "Family", 
-            16: "Animation",
-            28: "Action", 
-            12: "Adventure", 
-            35: "Comedy", 
-            80: "Crime", 
-            18: "Drama", 
-            14: "Fantasy", 
-            27: "Horror", 
-            9648: "Mystery", 
-            878: "Sci-Fi", 
-            53: "Thriller",
-            10749: "Romance"
-        },
-        tv: { 
-            10751: "Family",
-            16: "Animation",
-            10759: "Action & Adventure", 
-            35: "Comedy", 
-            80: "Crime", 
-            18: "Drama", 
-            10765: "Sci-Fi & Fantasy", 
-            9648: "Mystery"
-        }
-    };
+    const genresMap = { 28: "Action", 12: "Adventure", 16: "Animation", 35: "Comedy", 80: "Crime", 18: "Drama", 14: "Fantasy", 27: "Horror", 9648: "Mystery", 878: "Sci-Fi", 53: "Thriller", 10749: "Romance", 10751: "Family", 10759: "Action & TV", 10765: "Sci-Fi & TV" };
 
-    function populateGenres() {
-        const select = document.getElementById('genre-select');
-        select.innerHTML = '';
-        Object.entries(genres[currentMode]).forEach(([id, name]) => {
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.innerText = name;
-            select.appendChild(opt);
-        });
-    }
+    const genreData = {
+        movie: { 10751: "Family", 16: "Animation", 28: "Action", 12: "Adventure", 35: "Comedy", 80: "Crime", 18: "Drama", 14: "Fantasy", 27: "Horror", 9648: "Mystery", 878: "Sci-Fi", 53: "Thriller" },
+        tv: { 10751: "Family", 16: "Animation", 10759: "Action & Adventure", 35: "Comedy", 80: "Crime", 18: "Drama", 10765: "Sci-Fi & Fantasy", 9648: "Mystery" }
+    };
 
     function setMode(mode) {
         currentMode = mode;
-        document.getElementById('movie-tab').classList.toggle('active', mode === 'movie');
-        document.getElementById('tv-tab').classList.toggle('active', mode === 'tv');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`${mode}-tab`).classList.add('active');
+        
         document.getElementById('display-area').innerHTML = '';
-        populateGenres();
+        document.getElementById('list-area').innerHTML = '';
+        
+        const label = document.getElementById('select-label');
+        const select = document.getElementById('data-select');
+        select.innerHTML = '';
+
+        if (mode === 'releases') {
+            label.innerText = "Select a Year from the Archives:";
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear; y >= 1940; y--) {
+                const opt = document.createElement('option');
+                opt.value = y; opt.innerText = y;
+                select.appendChild(opt);
+            }
+        } else {
+            label.innerText = "Select a Genre to Reveal:";
+            Object.entries(genreData[mode]).forEach(([id, name]) => {
+                const opt = document.createElement('option');
+                opt.value = id; opt.innerText = name;
+                select.appendChild(opt);
+            });
+        }
     }
 
     async function getRecommendation() {
-        const genreId = document.getElementById('genre-select').value;
+        const val = document.getElementById('data-select').value;
         const display = document.getElementById('display-area');
-        display.innerHTML = "<p style='text-align:center'>Reading the tea leaves...</p>";
+        const listArea = document.getElementById('list-area');
+        
+        display.innerHTML = "<p style='text-align:center'>Consulting the Ministry archives...</p>";
+        listArea.innerHTML = '';
 
         try {
-            const randomPage = Math.floor(Math.random() * 8) + 1;
-            const url = `${BASE_URL}/discover/${currentMode}?api_key=${API_KEY}&with_genres=${genreId}&page=${randomPage}&language=en-US&sort_by=popularity.desc`;
+            let url = '';
+            if (currentMode === 'releases') {
+                url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&primary_release_year=${val}&sort_by=popularity.desc&language=en-US`;
+            } else {
+                const randomPage = Math.floor(Math.random() * 5) + 1;
+                url = `${BASE_URL}/discover/${currentMode}?api_key=${API_KEY}&with_genres=${val}&page=${randomPage}&sort_by=popularity.desc`;
+            }
             
             const response = await fetch(url);
             const data = await response.json();
             
             if (data.results?.length > 0) {
-                const item = data.results[Math.floor(Math.random() * data.results.length)];
-                fetchFullDetails(item.id);
+                if (currentMode === 'releases') {
+                    display.innerHTML = `<p style='text-align:center'>Found ${data.results.length} scrolls from ${val}. Click one to read more.</p>`;
+                    renderReleaseList(data.results);
+                } else {
+                    const item = data.results[Math.floor(Math.random() * data.results.length)];
+                    fetchFullDetails(item.id, currentMode);
+                }
             } else {
-                display.innerHTML = "No results found. Try a different genre!";
+                display.innerHTML = "No records found for this selection.";
             }
         } catch (err) {
-            display.innerHTML = "<p style='color:var(--maroon); text-align:center;'>The owls got lost. Check your API key!</p>";
+            display.innerHTML = "The owls got lost. Is your API key correct?";
         }
     }
 
-    async function fetchFullDetails(id) {
+    function renderReleaseList(movies) {
+        const listArea = document.getElementById('list-area');
+        const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+
+        movies.forEach(m => {
+            const isFav = favorites[m.id] !== undefined;
+            const genreNames = m.genre_ids.map(id => genresMap[id] || "").filter(n => n).slice(0, 2).join(", ");
+            
+            const div = document.createElement('div');
+            div.className = 'release-item';
+            div.innerHTML = `
+                <img class="release-thumb" src="https://image.tmdb.org/t/p/w200${m.poster_path}" alt="poster" onclick="fetchFullDetails(${m.id}, 'movie')" onerror="this.src='https://via.placeholder.com/60x90'">
+                <div class="release-info" onclick="fetchFullDetails(${m.id}, 'movie')">
+                    <h4>${m.title}</h4>
+                    <div class="release-meta">Rating: ${m.vote_average}/10 | ${genreNames}</div>
+                </div>
+                <button class="star-btn ${isFav ? 'active' : ''}" style="font-size: 1.5rem;" onclick="toggleFav('${m.id}', '${m.title.replace(/'/g, "\\'")}')">★</button>
+            `;
+            listArea.appendChild(div);
+        });
+    }
+
+    async function fetchFullDetails(id, mode) {
         try {
-            const response = await fetch(`${BASE_URL}/${currentMode}/${id}?api_key=${API_KEY}&append_to_response=credits,videos`);
+            const response = await fetch(`${BASE_URL}/${mode}/${id}?api_key=${API_KEY}&append_to_response=credits,videos`);
             currentItem = await response.json();
+            currentItem.type = mode; // Store type for re-rendering
             renderCard(currentItem);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         } catch (err) { console.error(err); }
     }
 
@@ -246,36 +274,29 @@
         const title = item.title || item.name;
         const releaseDate = item.release_date || item.first_air_date || '';
         const releaseYear = releaseDate ? `(${releaseDate.substring(0, 4)})` : '';
-        
         const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const isFav = favorites[item.id] !== undefined;
         const trailer = item.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube');
-        const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown Players';
+        const castNames = item.credits?.cast?.slice(0, 5).map(c => c.name).join(', ') || 'Unknown';
 
-        let tvInfo = '';
-        if (currentMode === 'tv') {
-            const status = item.status === 'Ended' || item.status === 'Canceled' ? 'Ended' : 'Ongoing';
-            const statusClass = status === 'Ongoing' ? 'status-ongoing' : 'status-ended';
-            tvInfo = `
-                <div class="tv-meta">
-                    Seasons: ${item.number_of_seasons || 'N/A'} 
-                    <span class="status-badge ${statusClass}">${status}</span>
-                </div>
-            `;
+        let tvMeta = '';
+        if (item.number_of_seasons) {
+            const statusClass = (item.status === 'Ended') ? 'status-ended' : 'status-ongoing';
+            tvMeta = `<div class="tv-meta">Seasons: ${item.number_of_seasons} <span class="status-badge ${statusClass}">${item.status}</span></div>`;
         }
 
         document.getElementById('display-area').innerHTML = `
             <div class="result-card">
                 <div class="poster-container">
-                    <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="poster" onerror="this.src='https://via.placeholder.com/500x750?text=No+Poster'">
+                    <img src="https://image.tmdb.org/t/p/w500${item.poster_path}" alt="poster" onerror="this.src='https://via.placeholder.com/500x750'">
                 </div>
                 <div class="details">
                     <h2>${title} <span class="year-tag">${releaseYear}</span>
                         <button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFav('${item.id}', '${title.replace(/'/g, "\\'")}')">★</button>
                     </h2>
                     <div class="rating">Wizard Rating: ${item.vote_average.toFixed(1)}/10</div>
-                    ${tvInfo}
-                    <p><strong>The Legend:</strong> ${item.overview || 'No story found in the archives.'}</p>
+                    ${tvMeta}
+                    <p><strong>The Legend:</strong> ${item.overview || 'Restricted Section data missing.'}</p>
                     <p class="cast-list"><strong>The Players:</strong> ${castNames}</p>
                     ${trailer ? `<button class="pensieve-btn" onclick="window.open('https://youtube.com/watch?v=${trailer.key}', '_blank')">View in Pensieve</button>` : ''}
                 </div>
@@ -285,10 +306,18 @@
 
     function toggleFav(id, title) {
         let favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-        if (favorites[id]) { delete favorites[id]; } 
-        else { favorites[id] = title; }
+        if (favorites[id]) { delete favorites[id]; } else { favorites[id] = title; }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-        renderCard(currentItem);
+        if (currentItem && currentItem.id == id) renderCard(currentItem);
+        if (currentMode === 'releases') {
+            // Re-render list to update star states without a full API call
+            const listItems = document.querySelectorAll('.release-item');
+            listItems.forEach(el => {
+                if (el.innerHTML.includes(title)) {
+                    el.querySelector('.star-btn').classList.toggle('active');
+                }
+            });
+        }
         updateGrimoire();
     }
 
@@ -305,10 +334,7 @@
         list.innerHTML = '';
         const favorites = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
         const keys = Object.keys(favorites);
-        if (keys.length === 0) { 
-            list.innerHTML = "<li style='font-style:italic; opacity:0.6;'>Grimoire empty...</li>"; 
-            return; 
-        }
+        if (keys.length === 0) { list.innerHTML = "<li>Grimoire empty...</li>"; return; }
         keys.forEach(id => {
             const li = document.createElement('li');
             li.innerHTML = `<span>⚡ ${favorites[id]}</span> <button class="delete-btn" onclick="deleteFav('${id}')">Deletrius</button>`;
@@ -316,7 +342,7 @@
         });
     }
 
-    populateGenres();
+    setMode('movie');
     updateGrimoire();
 </script>
 </body>
